@@ -63,7 +63,7 @@ const countIssuesStmt = db.prepare(`
   WHERE repo = ?
 `);
 
-const upsertIssuesTransaction = db.transaction((repo: string, issues: Issue[]) => {
+const persistIssueBatch = (repo: string, issues: Issue[]): void => {
   for (const issue of issues) {
     upsertIssueStmt.run({
       repo,
@@ -76,6 +76,10 @@ const upsertIssuesTransaction = db.transaction((repo: string, issues: Issue[]) =
       cached_at: issue.cachedAt
     });
   }
+};
+
+const upsertIssuesTransaction = db.transaction((repo: string, issues: Issue[]) => {
+  persistIssueBatch(repo, issues);
 });
 
 export const upsertIssues = (repo: string, issues: Issue[]): void => {
@@ -85,6 +89,8 @@ export const upsertIssues = (repo: string, issues: Issue[]): void => {
 
   upsertIssuesTransaction(repo, issues);
 };
+
+export const upsertIssuesWithoutTransaction = persistIssueBatch;
 
 export const getIssuesByRepo = (repo: string): Issue[] => {
   const rows = getIssuesStmt.all(repo) as IssueRow[];
