@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "sourceMap": true
+  },
+  "baseUrl": ".",
+  "paths": {
+    "./config/index.js": ["src/config/index.ts"],
+    "./server.js": ["src/server.ts"],
+    "./config/schema.js": ["src/config/schema.ts"],
+    "./routes/health.js": ["src/routes/health.ts"],
+    "./schema.js": ["src/config/schema.ts"]
+  },
+  "include": ["src"]
+}
