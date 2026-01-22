@@ -1,6 +1,6 @@
 # GitHub Issue Analyzer
 
-Fastify + TypeScript service that caches GitHub issues locally (SQLite) and lets you analyze the cached data with a local LLM (Ollama by default), keeping the stack zero-cost by default.
+Fastify + TypeScript service that caches GitHub issues locally (SQLite) and lets you analyze the cached data with a local LLM (Ollama by default).
 
 ## Overview
 
@@ -96,7 +96,6 @@ POST http://localhost:3000/analyze
 - Durable storage that survives server restarts without extra services.
 - Simple file (`./data/cache.db` by default), easy to inspect with CLI tools when debugging.
 - `issueRepository` performs batched upserts, so re-scanning repositories replaces stale issue data cleanly.
-- Single local database can hold data for many repos, keeping the demo focused on zero-cost development.
 
 ## Demo
 
@@ -125,50 +124,4 @@ curl -sSf "http://localhost:3000/analyze?format=text" \
   -H "Content-Type: application/json" \
   -H "Accept: text/plain" \
   -d '{"repo":"nestjs/nest","prompt":"Summarize blockers and quick wins."}'
-```
-
-## Prompt log
-
-### Build prompts sent to AI tools
-
-1. “Act as a senior TypeScript Fastify engineer: design a `/scan` endpoint that fetches open GitHub issues, filters out PRs, and caches results in a local SQLite database while storing repo metadata.”
-2. “Help me design context budgeting logic that keeps LLM prompts under token and character limits by selectively truncating issue bodies and switching to map-reduce when necessary.”
-3. “Describe how to structure the `/analyze` analysis pipeline so it feeds the same prompt and cached data into a reusable `runAnalysis` helper with clear logging.”
-
-### Debug prompts
-
-1. “Why does `/scan` still store pull requests even though GitHub returns both issues and PRs? Suggest how to reuse the existing `filterPullRequests` helper before persisting.”
-2. “The `/analyze` endpoint fails with `ContextBudgetError` when a repo has many issues; what knobs (env vars or data transformations) can I expose so the budget plan has more headroom?”
-3. “The Ollama response occasionally looks malformed and the route returns `502`; what timeout and error handling patterns should wrap `llmProvider.generate` to surface `LLMResponseError` with actionable guidance?”
-
-### Final `/analyze` LLM prompts used in code
-
-System message (combined instructions):
-
-```text
-You are a senior engineering/product maintainer assistant. Respond in clear markdown-style text. Ground recommendations in the provided issues and include issue URLs when referencing evidence. If information is missing, explain what additional context is required.
-```
-
-Map user message template:
-
-```text
-USER PROMPT:
-<user prompt text here>
-
-ISSUES:
-<formatted issues block>
-
-TASK: Summarize the findings that are most relevant to the USER PROMPT. Cover themes, top actionable items, evidence URLs, and identify duplicates or related issues when seen.
-```
-
-Reduce user message template:
-
-```text
-USER PROMPT:
-<user prompt text here>
-
-CHUNK SUMMARIES:
-<map chunk summaries>
-
-TASK: Produce a final consolidated answer that includes prioritized recommendations (P0/P1/P2), quick wins, risks/unknowns, and an evidence list (URLs).
 ```
