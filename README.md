@@ -89,6 +89,7 @@ POST http://localhost:3000/analyze
 - If your request exceeds configured bounds, the endpoint returns `400` with `PromptTooLongError` or `ContextBudgetError` messages and suggests lowering `ANALYZE_MAX_ISSUES`, `ISSUE_BODY_MAX_CHARS`, or increasing `CONTEXT_MAX_TOKENS`.
 - LLM availability errors surface as `503` (`LLMConnectionError`/`LLMModelError`) or `502` (`LLMResponseError`); ensure Ollama is running and the specified model is pulled locally.
 - Final analysis is purely the LLM response (`analysis` string). The service does not call GitHub again during `/analyze`.
+- Responses default to JSON, and the `analysis` string escapes line breaks as `\n`. Add `?format=text` or send `Accept: text/plain` to get a CLI-friendly `text/plain` response with actual newlines (plus a trailing newline for terminal readability).
 
 ## Why SQLite
 
@@ -118,6 +119,11 @@ curl -sSf http://localhost:3000/scan \
 
 curl -sSf http://localhost:3000/analyze \
   -H "Content-Type: application/json" \
+  -d '{"repo":"nestjs/nest","prompt":"Summarize blockers and quick wins."}'
+
+curl -sSf "http://localhost:3000/analyze?format=text" \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/plain" \
   -d '{"repo":"nestjs/nest","prompt":"Summarize blockers and quick wins."}'
 ```
 

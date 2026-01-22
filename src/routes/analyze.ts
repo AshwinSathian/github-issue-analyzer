@@ -22,6 +22,13 @@ const analyzeSchema = {
     },
     required: ['repo', 'prompt'],
     additionalProperties: false
+  },
+  querystring: {
+    type: 'object',
+    properties: {
+      format: { type: 'string', enum: ['json', 'text'] }
+    },
+    additionalProperties: false
   }
 };
 
@@ -39,11 +46,25 @@ type AnalyzeRequestBody = {
   prompt: string;
 };
 
+type AnalyzeQuery = {
+  format?: 'json' | 'text';
+};
+
 const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, options) => {
   fastify.post('/analyze', { schema: analyzeSchema }, async (request, reply) => {
     const { repo, prompt } = request.body as AnalyzeRequestBody;
+    const { format } = (request.query as AnalyzeQuery) ?? {};
     const trimmedRepo = repo.trim();
     const trimmedPrompt = prompt.trim();
+    const rawAccept = request.headers.accept;
+    const normalizedAccept =
+      typeof rawAccept === 'string'
+        ? rawAccept
+        : Array.isArray(rawAccept)
+        ? rawAccept.join(', ')
+        : '';
+    const wantsText =
+      format === 'text' || normalizedAccept.toLowerCase().includes('text/plain');
 
     if (!repoPattern.test(trimmedRepo)) {
       return sendError(reply, 400, 'INVALID_REPO', 'Invalid repo format, expected owner/repository (single slash)');
@@ -62,7 +83,12 @@ const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, op
     const cachedIssues = options.issueRepository.getIssuesByRepo(trimmedRepo);
 
     if (!cachedIssues.length) {
-      return reply.send({ analysis: 'No open issues cached for this repo.' });
+      const noIssuesResponse = { analysis: 'No open issues cached for this repo.' };
+      if (wantsText) {
+        reply.type('text/plain; charset=utf-8').send(`${noIssuesResponse.analysis}\n`);
+        return reply;
+      }
+      return reply.send(noIssuesResponse);
     }
 
     const budgetIssues = cachedIssues.map((issue) => ({
@@ -114,7 +140,7 @@ const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, op
     const durationMs = Date.now() - startTime;
     const logMeta: Record<string, unknown> = {
       repo: trimmedRepo,
-      issues: budgetIssues.length,
+      issueCount: budgetIssues.length,
       mode: analysisMode,
       durationMs
     };
@@ -124,6 +150,11 @@ const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, op
     }
 
     request.log.info(logMeta, 'Repository analysis complete');
+
+    if (wantsText) {
+      reply.type('text/plain; charset=utf-8').send(`${analysisText}\n`);
+      return reply;
+    }
 
     return reply.send({ analysis: analysisText });
   });

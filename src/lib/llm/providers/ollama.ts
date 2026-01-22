@@ -90,13 +90,14 @@ export class OllamaProvider implements LLMProvider {
     } catch (error) {
       // Fallback: NDJSON / multiple JSON objects separated by newlines
       const lines = trimmed
-        .split('\n')
+        .split(/\r?\n/)
         .map((l) => l.trim())
         .filter(Boolean);
+
       if (lines.length > 1) {
-        const last = lines[lines.length - 1];
+        const lastLine = lines[lines.length - 1];
         try {
-          return JSON.parse(last);
+          return JSON.parse(lastLine);
         } catch {
           // fallthrough to error below
         }
