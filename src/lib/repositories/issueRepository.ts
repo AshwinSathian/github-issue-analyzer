@@ -1,4 +1,6 @@
-import { db } from '../db.js';
+import Database from 'better-sqlite3';
+
+type SQLiteDatabase = InstanceType<typeof Database>;
 
 export type Issue = {
   issueId: number;
@@ -20,94 +22,108 @@ type IssueRow = {
   cached_at: string;
 };
 
-const upsertIssueStmt = db.prepare(`
-  INSERT INTO issues (
-    repo,
-    issue_id,
-    number,
-    title,
-    body,
-    html_url,
-    created_at,
-    cached_at
-  )
-  VALUES (
-    @repo,
-    @issue_id,
-    @number,
-    @title,
-    @body,
-    @html_url,
-    @created_at,
-    @cached_at
-  )
-  ON CONFLICT(repo, issue_id) DO UPDATE SET
-    number = excluded.number,
-    title = excluded.title,
-    body = excluded.body,
-    html_url = excluded.html_url,
-    created_at = excluded.created_at,
-    cached_at = excluded.cached_at
-`);
+export type IssueRepository = {
+  persistIssueBatch(repo: string, issues: Issue[]): void;
+  upsertIssues(repo: string, issues: Issue[]): void;
+  getIssuesByRepo(repo: string): Issue[];
+  countIssuesByRepo(repo: string): number;
+};
 
-const getIssuesStmt = db.prepare(`
-  SELECT issue_id, number, title, body, html_url, created_at, cached_at
-  FROM issues
-  WHERE repo = ?
-  ORDER BY issue_id DESC
-`);
-
-const countIssuesStmt = db.prepare(`
-  SELECT COUNT(*) AS count
-  FROM issues
-  WHERE repo = ?
-`);
-
-const persistIssueBatch = (repo: string, issues: Issue[]): void => {
-  for (const issue of issues) {
-    upsertIssueStmt.run({
+export const createIssueRepository = (db: SQLiteDatabase): IssueRepository => {
+  const upsertIssueStmt = db.prepare(`
+    INSERT INTO issues (
       repo,
-      issue_id: issue.issueId,
-      number: issue.number,
-      title: issue.title,
-      body: issue.body,
-      html_url: issue.htmlUrl,
-      created_at: issue.createdAt,
-      cached_at: issue.cachedAt
-    });
-  }
-};
+      issue_id,
+      number,
+      title,
+      body,
+      html_url,
+      created_at,
+      cached_at
+    )
+    VALUES (
+      @repo,
+      @issue_id,
+      @number,
+      @title,
+      @body,
+      @html_url,
+      @created_at,
+      @cached_at
+    )
+    ON CONFLICT(repo, issue_id) DO UPDATE SET
+      number = excluded.number,
+      title = excluded.title,
+      body = excluded.body,
+      html_url = excluded.html_url,
+      created_at = excluded.created_at,
+      cached_at = excluded.cached_at
+  `);
 
-const upsertIssuesTransaction = db.transaction((repo: string, issues: Issue[]) => {
-  persistIssueBatch(repo, issues);
-});
+  const getIssuesStmt = db.prepare(`
+    SELECT issue_id, number, title, body, html_url, created_at, cached_at
+    FROM issues
+    WHERE repo = ?
+    ORDER BY issue_id DESC
+  `);
 
-export const upsertIssues = (repo: string, issues: Issue[]): void => {
-  if (!issues.length) {
-    return;
-  }
+  const countIssuesStmt = db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM issues
+    WHERE repo = ?
+  `);
 
-  upsertIssuesTransaction(repo, issues);
-};
+  const persistIssueBatch = (repo: string, issues: Issue[]): void => {
+    for (const issue of issues) {
+      upsertIssueStmt.run({
+        repo,
+        issue_id: issue.issueId,
+        number: issue.number,
+        title: issue.title,
+        body: issue.body,
+        html_url: issue.htmlUrl,
+        created_at: issue.createdAt,
+        cached_at: issue.cachedAt
+      });
+    }
+  };
 
-export const upsertIssuesWithoutTransaction = persistIssueBatch;
+  const upsertIssuesTransaction = db.transaction((repo: string, issues: Issue[]) => {
+    persistIssueBatch(repo, issues);
+  });
 
-export const getIssuesByRepo = (repo: string): Issue[] => {
-  const rows = getIssuesStmt.all(repo) as IssueRow[];
+  const upsertIssues = (repo: string, issues: Issue[]): void => {
+    if (!issues.length) {
+      return;
+    }
 
-  return rows.map((row) => ({
-    issueId: row.issue_id,
-    number: row.number,
-    title: row.title,
-    body: row.body,
-    htmlUrl: row.html_url,
-    createdAt: row.created_at,
-    cachedAt: row.cached_at
-  }));
-};
+    upsertIssuesTransaction(repo, issues);
+  };
 
-export const countIssuesByRepo = (repo: string): number => {
-  const row = countIssuesStmt.get(repo) as { count: number } | undefined;
+  const getIssuesByRepo = (repo: string): Issue[] => {
+    const rows = getIssuesStmt.all(repo) as IssueRow[];
 
-  return typeof row?.count === 'number' ? row.count : 0;
+    return rows.map((row) => ({
+      issueId: row.issue_id,
+      number: row.number,
+      title: row.title,
+      body: row.body,
+      htmlUrl: row.html_url,
+      createdAt: row.created_at,
+      cachedAt: row.cached_at
+    }));
+  };
+
+  const countIssuesByRepo = (repo: string): number => {
+    const row = countIssuesStmt.get(repo) as { count: number } | undefined;
+
+    return typeof row?.count === 'number' ? row.count : 0;
+  };
+
+  return {
+    persistIssueBatch,
+    upsertIssues,
+    getIssuesByRepo,
+    countIssuesByRepo
+  };
 };

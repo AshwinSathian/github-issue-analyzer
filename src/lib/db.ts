@@ -1,14 +1,17 @@
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
-import { config } from '../config/index.js';
 
-const resolvedPath = path.resolve(config.STORAGE_PATH);
-const storageDir = path.dirname(resolvedPath);
+type SQLiteDatabase = InstanceType<typeof Database>;
 
-fs.mkdirSync(storageDir, { recursive: true });
+export const createDatabase = (storagePath: string): SQLiteDatabase => {
+  const resolvedPath = path.resolve(storagePath);
+  const storageDir = path.dirname(resolvedPath);
 
-const db = new Database(resolvedPath, { fileMustExist: false, readonly: false });
-db.pragma('journal_mode = WAL');
+  fs.mkdirSync(storageDir, { recursive: true });
 
-export { db };
+  const database = new Database(resolvedPath, { fileMustExist: false, readonly: false });
+  database.pragma('journal_mode = WAL');
+
+  return database;
+};

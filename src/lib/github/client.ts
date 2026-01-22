@@ -1,4 +1,9 @@
-import { GitHubNotFoundError, GitHubRateLimitError, GitHubServiceError, GitHubUnexpectedError } from './errors.js';
+import {
+  GitHubNotFoundError,
+  GitHubRateLimitError,
+  GitHubServiceError,
+  GitHubUnexpectedError
+} from './errors.js';
 import type { GitHubIssue } from './types.js';
 
 const GITHUB_API_BASE = 'https://api.github.com';
@@ -6,6 +11,13 @@ const ISSUES_PER_PAGE = 100;
 
 export type FetchOpenIssuesOptions = {
   token?: string;
+};
+
+export const filterPullRequests = (issues: GitHubIssue[]): GitHubIssue[] =>
+  issues.filter((item) => !('pull_request' in item));
+
+export type GitHubClient = {
+  fetchOpenIssues(owner: string, repo: string, options?: FetchOpenIssuesOptions): Promise<GitHubIssue[]>;
 };
 
 export const fetchOpenIssues = async (
@@ -25,6 +37,7 @@ export const fetchOpenIssues = async (
   const issues: GitHubIssue[] = [];
   let page = 1;
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const url = new URL(`${GITHUB_API_BASE}/repos/${owner}/${repo}/issues`);
     url.searchParams.set('state', 'open');
@@ -44,7 +57,7 @@ export const fetchOpenIssues = async (
     }
 
     const data = (await response.json()) as GitHubIssue[];
-    const batch = data.filter((item) => !('pull_request' in item));
+    const batch = filterPullRequests(data);
 
     if (batch.length) {
       issues.push(...batch);
@@ -77,4 +90,8 @@ const handleErrorResponse = async (response: Response): Promise<never> => {
   }
 
   throw new GitHubUnexpectedError();
+};
+
+export const defaultGitHubClient: GitHubClient = {
+  fetchOpenIssues
 };

@@ -1,6 +1,6 @@
 import { LLMConnectionError, LLMModelError, LLMResponseError } from '../errors.js';
-import type { LLMGenerateInput, LLMGenerateOutput } from '../types.js';
 import type { LLMProvider } from '../provider.js';
+import type { LLMGenerateInput, LLMGenerateOutput } from '../types.js';
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 

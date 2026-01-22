@@ -1,15 +1,18 @@
+import Database from 'better-sqlite3';
 import type { FastifyPluginAsync } from 'fastify';
-import { db } from '../lib/db.js';
-import { fetchOpenIssues } from '../lib/github/client.js';
-import type { GitHubIssue } from '../lib/github/types.js';
+import { filterPullRequests, type GitHubClient } from '../lib/github/client.js';
 import {
   GitHubNotFoundError,
   GitHubRateLimitError,
   GitHubServiceError,
   GitHubUnexpectedError
 } from '../lib/github/errors.js';
-import { upsertIssuesWithoutTransaction, type Issue } from '../lib/repositories/issueRepository.js';
-import { upsertRepo } from '../lib/repositories/repoRepository.js';
+import type { GitHubIssue } from '../lib/github/types.js';
+import { type Issue, type IssueRepository } from '../lib/repositories/issueRepository.js';
+import { type RepoRepository } from '../lib/repositories/repoRepository.js';
+import { sendError } from '../lib/routes/errorHelpers.js';
+
+type SQLiteDatabase = InstanceType<typeof Database>;
 
 const repoSchema = {
   body: {
@@ -25,6 +28,10 @@ const repoSchema = {
 const repoPattern = /^[^/\s]+\/[^/\s]+$/;
 
 type ScanRouteOptions = {
+  githubClient: GitHubClient;
+  database: SQLiteDatabase;
+  issueRepository: IssueRepository;
+  repoRepository: RepoRepository;
   githubToken?: string;
 };
 
@@ -38,9 +45,7 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
     const trimmedRepo = repo.trim();
 
     if (!repoPattern.test(trimmedRepo)) {
-      return reply
-        .status(400)
-        .send({ message: 'Invalid repo format, expected owner/repository (single slash)' });
+      return sendError(reply, 400, 'INVALID_REPO', 'Invalid repo format, expected owner/repository (single slash)');
     }
 
     const [owner, name] = trimmedRepo.split('/', 2);
@@ -49,29 +54,35 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
     let githubIssues: GitHubIssue[];
 
     try {
-      githubIssues = await fetchOpenIssues(owner, name, { token: options.githubToken });
+      githubIssues = await options.githubClient.fetchOpenIssues(owner, name, {
+        token: options.githubToken
+      });
     } catch (error) {
       if (error instanceof GitHubNotFoundError) {
-        return reply.status(404).send({ message: 'GitHub repository not found' });
+        return sendError(reply, 404, 'GITHUB_REPO_NOT_FOUND', 'GitHub repository not found');
       }
 
       if (error instanceof GitHubRateLimitError) {
-        return reply
-          .status(429)
-          .send({ message: 'GitHub rate limit reached; provide GITHUB_TOKEN to increase limits' });
+        return sendError(
+          reply,
+          429,
+          'GITHUB_RATE_LIMIT',
+          'GitHub rate limit reached; provide GITHUB_TOKEN to increase limits'
+        );
       }
 
       if (error instanceof GitHubServiceError || error instanceof GitHubUnexpectedError) {
         request.log.warn({ error, repo: trimmedRepo }, 'GitHub API error during scan');
-        return reply.status(502).send({ message: 'Unable to retrieve issues from GitHub' });
+        return sendError(reply, 502, 'GITHUB_SERVICE_ERROR', 'Unable to retrieve issues from GitHub');
       }
 
       request.log.error({ error, repo: trimmedRepo }, 'Unexpected error when fetching GitHub issues');
-      return reply.status(502).send({ message: 'Unable to retrieve issues from GitHub' });
+      return sendError(reply, 502, 'UNEXPECTED_ERROR', 'Unable to retrieve issues from GitHub');
     }
 
     const timestamp = new Date();
-    const issueRecords: Issue[] = githubIssues.map((issue) => ({
+    const filteredIssues = filterPullRequests(githubIssues);
+    const issueRecords: Issue[] = filteredIssues.map((issue) => ({
       issueId: issue.id,
       number: issue.number,
       title: issue.title,
@@ -82,18 +93,20 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
     }));
 
     try {
-      const persistScan = db.transaction((repoValue: string, records: Issue[], scannedAt: Date, openCount: number) => {
-        if (records.length) {
-          upsertIssuesWithoutTransaction(repoValue, records);
-        }
+      const persistScan = options.database.transaction(
+        (repoValue: string, records: Issue[], scannedAt: Date, openCount: number) => {
+          if (records.length) {
+            options.issueRepository.persistIssueBatch(repoValue, records);
+          }
 
-        upsertRepo(repoValue, scannedAt, openCount);
-      });
+          options.repoRepository.upsertRepo(repoValue, scannedAt, openCount);
+        }
+      );
 
       persistScan(trimmedRepo, issueRecords, timestamp, issueRecords.length);
     } catch (error) {
       request.log.error({ error, repo: trimmedRepo }, 'Failed to store scan results');
-      return reply.status(500).send({ message: 'Unable to cache GitHub issues' });
+      return sendError(reply, 500, 'DB_ERROR', 'Unable to cache GitHub issues');
     }
 
     const durationMs = Date.now() - startTime;

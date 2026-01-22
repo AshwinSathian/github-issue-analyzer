@@ -1,7 +1,7 @@
-import type { BudgetConfig, BudgetChunk, CachedIssue } from './types.js';
 import { ContextBudgetError } from './errors.js';
-import { estimateTokens } from './tokenEstimate.js';
 import { formatIssueForLLM, normalizePrompt } from './issueFormat.js';
+import { estimateTokens } from './tokenEstimate.js';
+import type { BudgetConfig, BudgetChunk, CachedIssue } from './types.js';
 
 const SYSTEM_TOKEN_RESERVE = 400;
 

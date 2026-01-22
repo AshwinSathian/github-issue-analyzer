@@ -1,6 +1,6 @@
-import type { Config } from '../../config/schema.js';
 import { OllamaProvider } from './providers/ollama.js';
 import type { LLMGenerateInput, LLMGenerateOutput } from './types.js';
+import type { Config } from '../../config/schema.js';
 
 export interface LLMProvider {
   generate(input: LLMGenerateInput): Promise<LLMGenerateOutput>;

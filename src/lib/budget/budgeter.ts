@@ -1,8 +1,8 @@
-import type { BudgetConfig, BudgetPlan, CachedIssue } from './types.js';
+import { buildMapReduceChunks } from './chunking.js';
 import { PromptTooLongError } from './errors.js';
 import { normalizePrompt, truncateIssueBody, formatIssueForLLM } from './issueFormat.js';
 import { estimateTokens } from './tokenEstimate.js';
-import { buildMapReduceChunks } from './chunking.js';
+import type { BudgetConfig, BudgetPlan, CachedIssue } from './types.js';
 
 const SYSTEM_TOKEN_RESERVE = 400;
 
