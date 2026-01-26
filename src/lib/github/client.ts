@@ -2,7 +2,7 @@ import {
   GitHubNotFoundError,
   GitHubRateLimitError,
   GitHubServiceError,
-  GitHubUnexpectedError
+  GitHubUnexpectedError,
 } from './errors.js';
 import type { GitHubIssue } from './types.js';
 
@@ -17,17 +17,21 @@ export const filterPullRequests = (issues: GitHubIssue[]): GitHubIssue[] =>
   issues.filter((item) => !('pull_request' in item));
 
 export type GitHubClient = {
-  fetchOpenIssues(owner: string, repo: string, options?: FetchOpenIssuesOptions): Promise<GitHubIssue[]>;
+  fetchOpenIssues(
+    owner: string,
+    repo: string,
+    options?: FetchOpenIssuesOptions,
+  ): Promise<GitHubIssue[]>;
 };
 
 export const fetchOpenIssues = async (
   owner: string,
   repo: string,
-  options: FetchOpenIssuesOptions = {}
+  options: FetchOpenIssuesOptions = {},
 ): Promise<GitHubIssue[]> => {
   const headers = new Headers({
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'github-issue-analyzer'
+    'User-Agent': 'github-issue-analyzer',
   });
 
   if (options.token) {
@@ -93,5 +97,5 @@ const handleErrorResponse = async (response: Response): Promise<never> => {
 };
 
 export const defaultGitHubClient: GitHubClient = {
-  fetchOpenIssues
+  fetchOpenIssues,
 };

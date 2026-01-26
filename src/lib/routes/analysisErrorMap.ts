@@ -12,7 +12,7 @@ export const mapAnalysisErrorToResponse = (error: unknown): AnalysisErrorRespons
     return {
       status: 400,
       code: error.code,
-      message: `Prompt exceeds ${error.max} characters (${error.actual} provided)`
+      message: `Prompt exceeds ${error.max} characters (${error.actual} provided)`,
     };
   }
 
@@ -20,7 +20,7 @@ export const mapAnalysisErrorToResponse = (error: unknown): AnalysisErrorRespons
     return {
       status: 400,
       code: error.code,
-      message: `${error.message} Consider lowering ANALYZE_MAX_ISSUES or ISSUE_BODY_MAX_CHARS or increasing CONTEXT_MAX_TOKENS.`
+      message: `${error.message} Consider lowering ANALYZE_MAX_ISSUES or ISSUE_BODY_MAX_CHARS or increasing CONTEXT_MAX_TOKENS.`,
     };
   }
 
@@ -28,7 +28,7 @@ export const mapAnalysisErrorToResponse = (error: unknown): AnalysisErrorRespons
     return {
       status: 503,
       code: error.code,
-      message: 'LLM provider unavailable; ensure the provider service is running and configured.'
+      message: 'LLM provider unavailable; ensure the provider service is running and configured.',
     };
   }
 
@@ -36,13 +36,13 @@ export const mapAnalysisErrorToResponse = (error: unknown): AnalysisErrorRespons
     return {
       status: 502,
       code: error.code,
-      message: 'LLM provider returned an unexpected response; try again shortly.'
+      message: 'LLM provider returned an unexpected response; try again shortly.',
     };
   }
 
   return {
     status: 500,
     code: 'UNEXPECTED_ERROR',
-    message: 'Unable to analyze issues right now'
+    message: 'Unable to analyze issues right now',
   };
 };

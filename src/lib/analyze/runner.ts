@@ -1,8 +1,4 @@
-import {
-  buildReduceUserMessage,
-  buildMapUserMessage,
-  buildSystemMessage
-} from './prompts.js';
+import { buildReduceUserMessage, buildMapUserMessage, buildSystemMessage } from './prompts.js';
 import type { Config } from '../../config/schema.js';
 import { buildBudgetPlan } from '../budget/budgeter.js';
 import { formatIssueForLLM } from '../budget/issueFormat.js';
@@ -24,7 +20,7 @@ export const runAnalysis = async (params: RunAnalysisParams): Promise<string> =>
     maxOutputTokens: config.LLM_MAX_OUTPUT_TOKENS,
     promptMaxChars: config.PROMPT_MAX_CHARS,
     analyzeMaxIssues: config.ANALYZE_MAX_ISSUES,
-    issueBodyMaxChars: config.ISSUE_BODY_MAX_CHARS
+    issueBodyMaxChars: config.ISSUE_BODY_MAX_CHARS,
   };
 
   const plan = buildBudgetPlan(budgetConfig, prompt, issues);
@@ -41,7 +37,7 @@ export const runAnalysis = async (params: RunAnalysisParams): Promise<string> =>
     const response = await llmProvider.generate({
       messages: [systemMessage, buildMapUserMessage(normalizedPrompt, formattedIssuesBlock)],
       temperature,
-      maxOutputTokens
+      maxOutputTokens,
     });
 
     return response.text;
@@ -54,7 +50,7 @@ export const runAnalysis = async (params: RunAnalysisParams): Promise<string> =>
     const response = await llmProvider.generate({
       messages: [systemMessage, buildMapUserMessage(normalizedPrompt, chunkBlock)],
       temperature,
-      maxOutputTokens
+      maxOutputTokens,
     });
 
     chunkSummaries.push(response.text);
@@ -67,7 +63,7 @@ export const runAnalysis = async (params: RunAnalysisParams): Promise<string> =>
   const finalResponse = await llmProvider.generate({
     messages: [systemMessage, buildReduceUserMessage(normalizedPrompt, chunkSummariesBlock)],
     temperature,
-    maxOutputTokens
+    maxOutputTokens,
   });
 
   return finalResponse.text;

@@ -4,6 +4,6 @@ export const sendError = (reply: FastifyReply, status: number, code: string, mes
   reply.status(status).send({
     error: {
       code,
-      message
-    }
+      message,
+    },
   });

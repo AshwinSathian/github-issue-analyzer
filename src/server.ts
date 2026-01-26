@@ -21,11 +21,14 @@ type ServerDependencies = {
   repoRepository?: RepoRepository;
 };
 
-export const buildServer = (config: Config, dependencies: ServerDependencies = {}): FastifyInstance => {
+export const buildServer = (
+  config: Config,
+  dependencies: ServerDependencies = {},
+): FastifyInstance => {
   const fastify = Fastify({
     logger: {
-      level: config.LOG_LEVEL
-    }
+      level: config.LOG_LEVEL,
+    },
   });
 
   fastify.addHook('onRequest', (request, reply, done) => {
@@ -58,13 +61,13 @@ export const buildServer = (config: Config, dependencies: ServerDependencies = {
     githubToken: config.GITHUB_TOKEN,
     database,
     issueRepository,
-    repoRepository
+    repoRepository,
   });
   fastify.register(analyzeRoute, {
     config,
     llmProviderFactory,
     issueRepository,
-    repoRepository
+    repoRepository,
   });
 
   return fastify;

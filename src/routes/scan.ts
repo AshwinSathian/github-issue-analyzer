@@ -5,7 +5,7 @@ import {
   GitHubNotFoundError,
   GitHubRateLimitError,
   GitHubServiceError,
-  GitHubUnexpectedError
+  GitHubUnexpectedError,
 } from '../lib/github/errors.js';
 import type { GitHubIssue } from '../lib/github/types.js';
 import { type Issue, type IssueRepository } from '../lib/repositories/issueRepository.js';
@@ -18,11 +18,11 @@ const repoSchema = {
   body: {
     type: 'object',
     properties: {
-      repo: { type: 'string' }
+      repo: { type: 'string' },
     },
     required: ['repo'],
-    additionalProperties: false
-  }
+    additionalProperties: false,
+  },
 };
 
 const repoPattern = /^[^/\s]+\/[^/\s]+$/;
@@ -45,7 +45,12 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
     const trimmedRepo = repo.trim();
 
     if (!repoPattern.test(trimmedRepo)) {
-      return sendError(reply, 400, 'INVALID_REPO', 'Invalid repo format, expected owner/repository (single slash)');
+      return sendError(
+        reply,
+        400,
+        'INVALID_REPO',
+        'Invalid repo format, expected owner/repository (single slash)',
+      );
     }
 
     const [owner, name] = trimmedRepo.split('/', 2);
@@ -55,7 +60,7 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
 
     try {
       githubIssues = await options.githubClient.fetchOpenIssues(owner, name, {
-        token: options.githubToken
+        token: options.githubToken,
       });
     } catch (error) {
       if (error instanceof GitHubNotFoundError) {
@@ -67,16 +72,24 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
           reply,
           429,
           'GITHUB_RATE_LIMIT',
-          'GitHub rate limit reached; provide GITHUB_TOKEN to increase limits'
+          'GitHub rate limit reached; provide GITHUB_TOKEN to increase limits',
         );
       }
 
       if (error instanceof GitHubServiceError || error instanceof GitHubUnexpectedError) {
         request.log.warn({ error, repo: trimmedRepo }, 'GitHub API error during scan');
-        return sendError(reply, 502, 'GITHUB_SERVICE_ERROR', 'Unable to retrieve issues from GitHub');
+        return sendError(
+          reply,
+          502,
+          'GITHUB_SERVICE_ERROR',
+          'Unable to retrieve issues from GitHub',
+        );
       }
 
-      request.log.error({ error, repo: trimmedRepo }, 'Unexpected error when fetching GitHub issues');
+      request.log.error(
+        { error, repo: trimmedRepo },
+        'Unexpected error when fetching GitHub issues',
+      );
       return sendError(reply, 502, 'UNEXPECTED_ERROR', 'Unable to retrieve issues from GitHub');
     }
 
@@ -89,7 +102,7 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
       body: issue.body ?? '',
       htmlUrl: issue.html_url,
       createdAt: issue.created_at,
-      cachedAt: timestamp.toISOString()
+      cachedAt: timestamp.toISOString(),
     }));
 
     try {
@@ -100,7 +113,7 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
           }
 
           options.repoRepository.upsertRepo(repoValue, scannedAt, openCount);
-        }
+        },
       );
 
       persistScan(trimmedRepo, issueRecords, timestamp, issueRecords.length);
@@ -110,12 +123,15 @@ const scanRoute: FastifyPluginAsync<ScanRouteOptions> = async (fastify, options)
     }
 
     const durationMs = Date.now() - startTime;
-    fastify.log.info({ repo: trimmedRepo, issues: issueRecords.length, durationMs }, 'GitHub scan complete');
+    fastify.log.info(
+      { repo: trimmedRepo, issues: issueRecords.length, durationMs },
+      'GitHub scan complete',
+    );
 
     return reply.send({
       repo: trimmedRepo,
       issues_fetched: issueRecords.length,
-      cached_successfully: true
+      cached_successfully: true,
     });
   });
 };

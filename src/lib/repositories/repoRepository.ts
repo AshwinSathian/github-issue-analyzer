@@ -38,7 +38,7 @@ export const createRepoRepository = (db: SQLiteDatabase): RepoRepository => {
     upsertRepoStmt.run({
       repo,
       last_scanned_at: scannedAt.toISOString(),
-      issues_open_count: openCount
+      issues_open_count: openCount,
     });
   };
 
@@ -52,12 +52,12 @@ export const createRepoRepository = (db: SQLiteDatabase): RepoRepository => {
     return {
       repo: row.repo,
       lastScannedAt: row.last_scanned_at,
-      issuesOpenCount: row.issues_open_count
+      issuesOpenCount: row.issues_open_count,
     };
   };
 
   return {
     upsertRepo,
-    getRepo
+    getRepo,
   };
 };

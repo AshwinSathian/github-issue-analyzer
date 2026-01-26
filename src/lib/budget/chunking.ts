@@ -13,7 +13,7 @@ type IssueEntry = {
 export const buildMapReduceChunks = (
   config: BudgetConfig,
   prompt: string,
-  issues: CachedIssue[]
+  issues: CachedIssue[],
 ): { chunks: BudgetChunk[]; notes: string[] } => {
   const normalizedPrompt = normalizePrompt(prompt);
   const promptTokens = estimateTokens(normalizedPrompt);
@@ -22,7 +22,7 @@ export const buildMapReduceChunks = (
 
   if (perChunkBudget <= 0) {
     throw new ContextBudgetError(
-      'Configured prompt/output tokens exceed the context window; lower prompt/output or increase CONTEXT_MAX_TOKENS.'
+      'Configured prompt/output tokens exceed the context window; lower prompt/output or increase CONTEXT_MAX_TOKENS.',
     );
   }
 
@@ -30,13 +30,13 @@ export const buildMapReduceChunks = (
     const formatted = formatIssueForLLM(issue);
     return {
       issue,
-      tokens: estimateTokens(formatted)
+      tokens: estimateTokens(formatted),
     };
   });
 
   const chunks: BudgetChunk[] = [];
   const notes: string[] = [
-    `Map-reduce required; per-chunk issue budget is approx ${perChunkBudget} tokens (system+prompt+output reserved ${overhead} tokens).`
+    `Map-reduce required; per-chunk issue budget is approx ${perChunkBudget} tokens (system+prompt+output reserved ${overhead} tokens).`,
   ];
 
   let currentTokens = 0;
@@ -52,7 +52,7 @@ export const buildMapReduceChunks = (
     const issueCount = currentIssues.length;
     chunks.push({
       chunkIndex,
-      issues: currentIssues
+      issues: currentIssues,
     });
     notes.push(`Chunk ${chunkIndex}: ${issueCount} issue(s), ~${tokensForChunk} tokens`);
     currentIssues = [];
@@ -62,7 +62,7 @@ export const buildMapReduceChunks = (
   for (const entry of issueEntries) {
     if (entry.tokens > perChunkBudget) {
       throw new ContextBudgetError(
-        'A single issue exceeds the allowed context after reserves; lower ISSUE_BODY_MAX_CHARS or reduce input volume.'
+        'A single issue exceeds the allowed context after reserves; lower ISSUE_BODY_MAX_CHARS or reduce input volume.',
       );
     }
 

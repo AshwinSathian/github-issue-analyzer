@@ -12,7 +12,7 @@ export const createLLMProvider = (config: Config): LLMProvider => {
   if (provider === 'ollama') {
     return new OllamaProvider({
       baseUrl: config.OLLAMA_BASE_URL,
-      model: config.OLLAMA_MODEL
+      model: config.OLLAMA_MODEL,
     });
   }
 

@@ -9,7 +9,7 @@ const SYSTEM_TOKEN_RESERVE = 400;
 export const buildBudgetPlan = (
   config: BudgetConfig,
   prompt: string,
-  issues: CachedIssue[]
+  issues: CachedIssue[],
 ): BudgetPlan => {
   if (prompt.length > config.promptMaxChars) {
     throw new PromptTooLongError(config.promptMaxChars, prompt.length);
@@ -31,12 +31,14 @@ export const buildBudgetPlan = (
     const wasTruncated = originalBody.length > config.issueBodyMaxChars;
 
     if (wasTruncated) {
-      notes.push(`Truncated body for issue #${issue.number} to ${config.issueBodyMaxChars} characters.`);
+      notes.push(
+        `Truncated body for issue #${issue.number} to ${config.issueBodyMaxChars} characters.`,
+      );
     }
 
     return {
       ...issue,
-      body: truncatedBody
+      body: truncatedBody,
     };
   });
 
@@ -45,7 +47,10 @@ export const buildBudgetPlan = (
   }
 
   const formattedIssueStrings = preparedIssues.map((issue) => formatIssueForLLM(issue));
-  const issuePayloadTokens = formattedIssueStrings.reduce((sum, text) => sum + estimateTokens(text), 0);
+  const issuePayloadTokens = formattedIssueStrings.reduce(
+    (sum, text) => sum + estimateTokens(text),
+    0,
+  );
 
   const promptTokens = estimateTokens(normalizedPrompt);
   const totalTokens =
@@ -58,22 +63,26 @@ export const buildBudgetPlan = (
     issuesUsed: preparedIssues,
     issuesDroppedCount,
     perIssueBodyMaxCharsApplied: config.issueBodyMaxChars,
-    notes
+    notes,
   };
 
   if (totalTokens <= config.contextMaxTokens) {
     return {
       ...basePlan,
-      mode: 'single'
+      mode: 'single',
     };
   }
 
-  const { chunks, notes: chunkNotes } = buildMapReduceChunks(config, normalizedPrompt, preparedIssues);
+  const { chunks, notes: chunkNotes } = buildMapReduceChunks(
+    config,
+    normalizedPrompt,
+    preparedIssues,
+  );
 
   return {
     ...basePlan,
     mode: 'map-reduce',
     chunks,
-    notes: [...notes, ...chunkNotes]
+    notes: [...notes, ...chunkNotes],
   };
 };

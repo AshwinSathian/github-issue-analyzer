@@ -25,6 +25,6 @@ export const formatIssueForLLM = (issue: CachedIssue): string => {
     `Created: ${issue.createdAt}`,
     `URL: ${issue.htmlUrl}`,
     `Body: ${body}`,
-    '---'
+    '---',
   ].join('\n');
 };

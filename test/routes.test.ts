@@ -17,13 +17,13 @@ const TEST_REPO = 'open-source/example';
 const makeTestConfig = (overrides: Partial<Config> = {}): Config =>
   ({
     ...baseConfig,
-    ...overrides
-  } as Config);
+    ...overrides,
+  }) as Config;
 
 const createTestEnvironment = async ({
   configOverrides,
   githubClient,
-  llmProviderFactory
+  llmProviderFactory,
 }: {
   configOverrides?: Partial<Config>;
   githubClient?: GitHubClient;
@@ -35,7 +35,7 @@ const createTestEnvironment = async ({
   const server = buildServer(makeTestConfig(configOverrides), {
     database,
     githubClient,
-    llmProviderFactory
+    llmProviderFactory,
   });
   await server.ready();
 
@@ -50,7 +50,7 @@ const createTestEnvironment = async ({
       await server.close();
       database.close();
       await fs.rm(tempDir, { recursive: true, force: true });
-    }
+    },
   };
 };
 
@@ -61,7 +61,7 @@ const createIssuePayload = (overrides: Partial<Issue> = {}): Issue => ({
   body: overrides.body ?? 'Sample body',
   htmlUrl: overrides.htmlUrl ?? 'https://example.com/issue/1',
   createdAt: overrides.createdAt ?? new Date().toISOString(),
-  cachedAt: overrides.cachedAt ?? new Date().toISOString()
+  cachedAt: overrides.cachedAt ?? new Date().toISOString(),
 });
 
 describe('API routes', () => {
@@ -87,27 +87,27 @@ describe('API routes', () => {
     const response = await env.server.inject({
       method: 'POST',
       url: '/scan',
-      payload: { repo: 'badrepo' }
+      payload: { repo: 'badrepo' },
     });
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
       error: {
         code: 'INVALID_REPO',
-        message: 'Invalid repo format, expected owner/repository (single slash)'
-      }
+        message: 'Invalid repo format, expected owner/repository (single slash)',
+      },
     });
   });
 
   it('POST /scan maps GitHub not found errors to 404', async () => {
     await env.cleanup();
     const githubClient: GitHubClient = {
-      fetchOpenIssues: vi.fn().mockRejectedValue(new GitHubNotFoundError())
+      fetchOpenIssues: vi.fn().mockRejectedValue(new GitHubNotFoundError()),
     };
     env = await createTestEnvironment({ githubClient });
     const response = await env.server.inject({
       method: 'POST',
       url: '/scan',
-      payload: { repo: TEST_REPO }
+      payload: { repo: TEST_REPO },
     });
     expect(response.statusCode).toBe(404);
     expect(response.json().error.code).toBe('GITHUB_REPO_NOT_FOUND');
@@ -123,21 +123,21 @@ describe('API routes', () => {
           title: 'Issue',
           body: 'Some body',
           html_url: 'https://example.com/issue/5',
-          created_at: new Date().toISOString()
-        }
-      ])
+          created_at: new Date().toISOString(),
+        },
+      ]),
     };
     env = await createTestEnvironment({ githubClient });
     const response = await env.server.inject({
       method: 'POST',
       url: '/scan',
-      payload: { repo: TEST_REPO }
+      payload: { repo: TEST_REPO },
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       repo: TEST_REPO,
       issues_fetched: 1,
-      cached_successfully: true
+      cached_successfully: true,
     });
     const storedIssues = env.issueRepository.getIssuesByRepo(TEST_REPO);
     expect(storedIssues).toHaveLength(1);
@@ -153,7 +153,7 @@ describe('API routes', () => {
           title: 'Real issue',
           body: 'Body',
           html_url: 'https://example.com/issue/6',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         },
         {
           id: 13,
@@ -162,9 +162,9 @@ describe('API routes', () => {
           body: 'Pull request body',
           html_url: 'https://example.com/pr/1',
           created_at: new Date().toISOString(),
-          pull_request: {}
-        }
-      ])
+          pull_request: {},
+        },
+      ]),
     };
     env = await createTestEnvironment({ githubClient });
     await env.server.inject({ method: 'POST', url: '/scan', payload: { repo: TEST_REPO } });
@@ -177,7 +177,7 @@ describe('API routes', () => {
     const response = await env.server.inject({
       method: 'POST',
       url: '/analyze',
-      payload: { repo: TEST_REPO, prompt: 'Anything' }
+      payload: { repo: TEST_REPO, prompt: 'Anything' },
     });
     expect(response.statusCode).toBe(404);
     expect(response.json().error.code).toBe('REPO_NOT_SCANNED');
@@ -188,7 +188,7 @@ describe('API routes', () => {
     const response = await env.server.inject({
       method: 'POST',
       url: '/analyze',
-      payload: { repo: TEST_REPO, prompt: 'Anything' }
+      payload: { repo: TEST_REPO, prompt: 'Anything' },
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ analysis: 'No open issues cached for this repo.' });
@@ -201,7 +201,7 @@ describe('API routes', () => {
     const response = await env.server.inject({
       method: 'POST',
       url: '/analyze',
-      payload: { repo: TEST_REPO, prompt: longPrompt }
+      payload: { repo: TEST_REPO, prompt: longPrompt },
     });
     expect(response.statusCode).toBe(400);
     expect(response.json().error.code).toBe('PROMPT_TOO_LONG');
@@ -216,7 +216,7 @@ describe('API routes', () => {
         generate: async () => {
           singleCallCount += 1;
           return { text: 'analysis-output' };
-        }
+        },
       };
     };
     await env.cleanup();
@@ -226,7 +226,7 @@ describe('API routes', () => {
     const response = await env.server.inject({
       method: 'POST',
       url: '/analyze',
-      payload: { repo: TEST_REPO, prompt: 'short prompt' }
+      payload: { repo: TEST_REPO, prompt: 'short prompt' },
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ analysis: 'analysis-output' });
@@ -240,17 +240,21 @@ describe('API routes', () => {
         generate: async () => {
           mapReduceCallCount += 1;
           return { text: `response-${mapReduceCallCount}` };
-        }
+        },
       };
     };
     await env.cleanup();
     env = await createTestEnvironment({
-      configOverrides: { CONTEXT_MAX_TOKENS: 1810, ANALYZE_MAX_ISSUES: 20, ISSUE_BODY_MAX_CHARS: 512 },
-      llmProviderFactory
+      configOverrides: {
+        CONTEXT_MAX_TOKENS: 1810,
+        ANALYZE_MAX_ISSUES: 20,
+        ISSUE_BODY_MAX_CHARS: 512,
+      },
+      llmProviderFactory,
     });
     env.repoRepository.upsertRepo(TEST_REPO, new Date(), 12);
     const heavyIssue = createIssuePayload({
-      body: 'A'.repeat(400)
+      body: 'A'.repeat(400),
     });
     const now = Date.now();
     env.issueRepository.persistIssueBatch(
@@ -260,13 +264,13 @@ describe('API routes', () => {
         issueId: index + 1,
         number: index + 1,
         createdAt: new Date(now + index).toISOString(),
-        cachedAt: new Date(now + index).toISOString()
-      }))
+        cachedAt: new Date(now + index).toISOString(),
+      })),
     );
     const response = await env.server.inject({
       method: 'POST',
       url: '/analyze',
-      payload: { repo: TEST_REPO, prompt: 'Force map reduce' }
+      payload: { repo: TEST_REPO, prompt: 'Force map reduce' },
     });
     expect(response.statusCode).toBe(200);
     const payload = response.json();

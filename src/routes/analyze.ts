@@ -2,11 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import type { Config } from '../config/schema.js';
 import { runAnalysis } from '../lib/analyze/runner.js';
 import { PromptTooLongError, ContextBudgetError } from '../lib/budget/errors.js';
-import {
-  LLMConnectionError,
-  LLMModelError,
-  LLMResponseError
-} from '../lib/llm/errors.js';
+import { LLMConnectionError, LLMModelError, LLMResponseError } from '../lib/llm/errors.js';
 import type { LLMProvider } from '../lib/llm/provider.js';
 import type { IssueRepository } from '../lib/repositories/issueRepository.js';
 import type { RepoRepository } from '../lib/repositories/repoRepository.js';
@@ -18,18 +14,18 @@ const analyzeSchema = {
     type: 'object',
     properties: {
       repo: { type: 'string' },
-      prompt: { type: 'string' }
+      prompt: { type: 'string' },
     },
     required: ['repo', 'prompt'],
-    additionalProperties: false
+    additionalProperties: false,
   },
   querystring: {
     type: 'object',
     properties: {
-      format: { type: 'string', enum: ['json', 'text'] }
+      format: { type: 'string', enum: ['json', 'text'] },
     },
-    additionalProperties: false
-  }
+    additionalProperties: false,
+  },
 };
 
 const repoPattern = /^[^/\s]+\/[^/\s]+$/;
@@ -61,13 +57,17 @@ const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, op
       typeof rawAccept === 'string'
         ? rawAccept
         : Array.isArray(rawAccept)
-        ? rawAccept.join(', ')
-        : '';
-    const wantsText =
-      format === 'text' || normalizedAccept.toLowerCase().includes('text/plain');
+          ? rawAccept.join(', ')
+          : '';
+    const wantsText = format === 'text' || normalizedAccept.toLowerCase().includes('text/plain');
 
     if (!repoPattern.test(trimmedRepo)) {
-      return sendError(reply, 400, 'INVALID_REPO', 'Invalid repo format, expected owner/repository (single slash)');
+      return sendError(
+        reply,
+        400,
+        'INVALID_REPO',
+        'Invalid repo format, expected owner/repository (single slash)',
+      );
     }
 
     if (!trimmedPrompt) {
@@ -77,7 +77,12 @@ const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, op
     const repoRecord = options.repoRepository.getRepo(trimmedRepo);
 
     if (!repoRecord) {
-      return sendError(reply, 404, 'REPO_NOT_SCANNED', 'Repo not scanned yet. Run POST /scan first.');
+      return sendError(
+        reply,
+        404,
+        'REPO_NOT_SCANNED',
+        'Repo not scanned yet. Run POST /scan first.',
+      );
     }
 
     const cachedIssues = options.issueRepository.getIssuesByRepo(trimmedRepo);
@@ -97,7 +102,7 @@ const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, op
       title: issue.title,
       body: issue.body,
       htmlUrl: issue.htmlUrl,
-      createdAt: issue.createdAt
+      createdAt: issue.createdAt,
     }));
     const llmProvider = options.llmProviderFactory(options.config);
 
@@ -118,7 +123,7 @@ const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, op
           if (plan.mode === 'map-reduce') {
             chunkCount = plan.chunks?.length ?? 0;
           }
-        }
+        },
       });
     } catch (error) {
       if (error instanceof PromptTooLongError) {
@@ -142,7 +147,7 @@ const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (fastify, op
       repo: trimmedRepo,
       issueCount: budgetIssues.length,
       mode: analysisMode,
-      durationMs
+      durationMs,
     };
 
     if (chunkCount !== undefined) {

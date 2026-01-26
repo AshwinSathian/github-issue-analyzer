@@ -27,11 +27,11 @@ export class LLMConnectionError extends LLMError {
 
 export class LLMResponseError extends LLMError {
   constructor(status: number, snippet: string, cause?: Error) {
-    super(
-      'llm.response_error',
-      `LLM responded with ${status}. Response snippet: ${snippet}`,
-      { status, snippet, cause }
-    );
+    super('llm.response_error', `LLM responded with ${status}. Response snippet: ${snippet}`, {
+      status,
+      snippet,
+      cause,
+    });
   }
 }
 
@@ -40,7 +40,7 @@ export class LLMModelError extends LLMError {
     super(
       'llm.model_error',
       `Model "${model}" unavailable. Pull the model locally (e.g., ollama run ${model})`,
-      { status, snippet, cause }
+      { status, snippet, cause },
     );
   }
 }

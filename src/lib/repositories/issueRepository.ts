@@ -83,7 +83,7 @@ export const createIssueRepository = (db: SQLiteDatabase): IssueRepository => {
         body: issue.body,
         html_url: issue.htmlUrl,
         created_at: issue.createdAt,
-        cached_at: issue.cachedAt
+        cached_at: issue.cachedAt,
       });
     }
   };
@@ -110,7 +110,7 @@ export const createIssueRepository = (db: SQLiteDatabase): IssueRepository => {
       body: row.body,
       htmlUrl: row.html_url,
       createdAt: row.created_at,
-      cachedAt: row.cached_at
+      cachedAt: row.cached_at,
     }));
   };
 
@@ -124,6 +124,6 @@ export const createIssueRepository = (db: SQLiteDatabase): IssueRepository => {
     persistIssueBatch,
     upsertIssues,
     getIssuesByRepo,
-    countIssuesByRepo
+    countIssuesByRepo,
   };
 };

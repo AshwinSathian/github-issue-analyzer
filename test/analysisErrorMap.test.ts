@@ -10,7 +10,7 @@ describe('mapAnalysisErrorToResponse', () => {
     expect(response).toMatchObject({
       status: 400,
       code: error.code,
-      message: 'Prompt exceeds 10 characters (20 provided)'
+      message: 'Prompt exceeds 10 characters (20 provided)',
     });
   });
 
@@ -29,12 +29,12 @@ describe('mapAnalysisErrorToResponse', () => {
     expect(mapAnalysisErrorToResponse(connectionError)).toEqual({
       status: 503,
       code: connectionError.code,
-      message: 'LLM provider unavailable; ensure the provider service is running and configured.'
+      message: 'LLM provider unavailable; ensure the provider service is running and configured.',
     });
     expect(mapAnalysisErrorToResponse(modelError)).toEqual({
       status: 503,
       code: modelError.code,
-      message: 'LLM provider unavailable; ensure the provider service is running and configured.'
+      message: 'LLM provider unavailable; ensure the provider service is running and configured.',
     });
   });
 
@@ -44,7 +44,7 @@ describe('mapAnalysisErrorToResponse', () => {
     expect(response).toEqual({
       status: 502,
       code: error.code,
-      message: 'LLM provider returned an unexpected response; try again shortly.'
+      message: 'LLM provider returned an unexpected response; try again shortly.',
     });
   });
 
@@ -53,7 +53,7 @@ describe('mapAnalysisErrorToResponse', () => {
     expect(response).toEqual({
       status: 500,
       code: 'UNEXPECTED_ERROR',
-      message: 'Unable to analyze issues right now'
+      message: 'Unable to analyze issues right now',
     });
   });
 });

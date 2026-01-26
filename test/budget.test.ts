@@ -4,7 +4,7 @@ import {
   truncateIssueBody,
   PromptTooLongError,
   type BudgetConfig,
-  type CachedIssue
+  type CachedIssue,
 } from '../src/lib/budget/index.js';
 
 const createIssue = (overrides: Partial<CachedIssue> = {}): CachedIssue => ({
@@ -13,7 +13,7 @@ const createIssue = (overrides: Partial<CachedIssue> = {}): CachedIssue => ({
   title: overrides.title ?? 'Example issue',
   body: overrides.body ?? 'Small issue body',
   htmlUrl: overrides.htmlUrl ?? 'https://example.com/1',
-  createdAt: overrides.createdAt ?? new Date().toISOString()
+  createdAt: overrides.createdAt ?? new Date().toISOString(),
 });
 
 describe('budget utilities', () => {
@@ -23,7 +23,7 @@ describe('budget utilities', () => {
       maxOutputTokens: 200,
       promptMaxChars: 10,
       analyzeMaxIssues: 5,
-      issueBodyMaxChars: 400
+      issueBodyMaxChars: 400,
     };
 
     const longPrompt = 'a'.repeat(20);
@@ -52,14 +52,12 @@ describe('budget utilities', () => {
       maxOutputTokens: 100,
       promptMaxChars: 200,
       analyzeMaxIssues: 5,
-      issueBodyMaxChars: 400
+      issueBodyMaxChars: 400,
     };
 
-    const plan = buildBudgetPlan(
-      config,
-      'Brief prompt',
-      [createIssue({ issueId: 1, number: 1, createdAt: '2024-01-01T00:00:00Z' })]
-    );
+    const plan = buildBudgetPlan(config, 'Brief prompt', [
+      createIssue({ issueId: 1, number: 1, createdAt: '2024-01-01T00:00:00Z' }),
+    ]);
 
     expect(plan.mode).toBe('single');
     expect(plan.chunks).toBeUndefined();
@@ -71,13 +69,13 @@ describe('budget utilities', () => {
       maxOutputTokens: 50,
       promptMaxChars: 200,
       analyzeMaxIssues: 5,
-      issueBodyMaxChars: 2048
+      issueBodyMaxChars: 2048,
     };
 
     const largeBody = 'A'.repeat(150);
     const plan = buildBudgetPlan(config, 'Prompt that fits', [
       createIssue({ issueId: 1, number: 1, body: largeBody, createdAt: '2024-02-01T00:00:00Z' }),
-      createIssue({ issueId: 2, number: 2, body: largeBody, createdAt: '2024-02-02T00:00:00Z' })
+      createIssue({ issueId: 2, number: 2, body: largeBody, createdAt: '2024-02-02T00:00:00Z' }),
     ]);
 
     expect(plan.mode).toBe('map-reduce');
