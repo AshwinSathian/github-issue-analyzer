@@ -1,10 +1,13 @@
 {
   "name": "github-issue-analyzer",
+  "author": {
+    "name": "Ashwin Sathian",
+    "email": "ashwinsathyan19@gmail.com"
+  },
   "version": "1.0.0",
   "type": "module",
   "description": "Fastify + TypeScript service for analyzing GitHub issues in future epics",
   "keywords": [],
-  "author": "Ashwin Sathian",
   "license": "ISC",
   "scripts": {
     "dev": "tsx watch src/index.ts",
